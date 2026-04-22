@@ -11,6 +11,21 @@ Write panels like a storyboard artist:
 - **Reserve negative space** for captions/speech overlays (the app adds strong “no text” constraints automatically).
 - **Continuity is sacred**: left/right positions, props-in-hand, wardrobe colors, lighting direction, and setting anchors should not drift unless the story calls for it.
 
+### PanelCraftBible (extracted from `references/panel-templates/`)
+
+These are style-only craft patterns distilled from your local reference pack. Use them to keep panels consistently readable, kinetic, and well-lettered **without copying any reference subjects or exact compositions**.
+
+- **Macro → micro rhythm**: open with an establishing wide (place + mood), then “step in” (medium), then land key intent on a close-up (hands/eyes/object) before widening again for payoff.
+- **Motion through segmentation**: break one action into 2–4 tight panels that each show a different phase (approach → contact → follow-through → reaction). Make the *change* obvious between panels.
+- **Use vertical slices for motion**: tall, narrow panels are great for footsteps, stair climbs, door entries, or a body moving through space. Repeat the environment lines (tiles/rails/steps) to show progression.
+- **Use stacked close-ups for precision**: when the story hinges on a small action (drawing a weapon, grabbing a key, turning a page), use 2–3 horizontal close-ups that progressively tighten the crop.
+- **Leave “quiet” letter zones**: reserve a top band or a side margin that is low-detail (sky/wall/flat gradient). Don’t put faces/hands/props behind those regions.
+- **Anchor geography early**: include 2–4 repeatable setting anchors (a window, a lamp, a road line, a workbench edge). Reuse them across adjacent panels to prevent “teleporting.”
+- **Focal hierarchy first**: prioritize silhouette clarity and a single dominant value/contrast area where the eye lands (usually face/hands/object). Everything else supports that read.
+- **Two-panel holds for emphasis**: when you want weight, use a pair of similar framings with one key change (expression shift, object moves, hand tightens). The repetition creates impact.
+- **Background detail policy**: detailed establishing panels are allowed; once dialogue increases, simplify backgrounds so the lettering and acting stay readable.
+- **Action needs visible evidence**: show physical consequences (paper flutter, dust, recoil, rip line, ripples, motion arcs) instead of only “intense” poses.
+
 ---
 
 ## The panel object (copy/paste template)
@@ -73,6 +88,29 @@ Action/Acting: <physical intent; visible motion; facial acting; hand positions>
 - **Do not add boilerplate** like “no text / no watermark / professional quality” inside `imagePrompt`. The renderer appends those constraints and also normalizes them out.
 - **Do not paste a character bible into every panel**. If you’re using `CHARACTER LOCK`, it belongs in **panel 1 only**; the app extracts it into a global lock.
 - **Keep it drawable**: avoid abstract emotions without visible acting (“angry” → brows/eyes/mouth + shoulders/hands posture).
+
+---
+
+## Layout recipes (high-quality page rhythm)
+
+These are quick “panel choreography” patterns you can apply to many stories. They map directly to `layoutIntent` + `storyBeat`:
+
+- **Recipe 1: Establish → exchange → escalation → climax → resolution (6 panels)**
+  - **P1 (full, establish)**: wide geography + mood + clear letter band
+  - **P2–P3 (pair-next, exchange)**: medium two-shots / reverses, keep backgrounds simple
+  - **P4 (wide, escalation)**: close-up of the *thing that changes* (hand/object/face) with visible consequence
+  - **P5 (full, climax)**: big simple action read, high contrast, minimum clutter
+  - **P6 (full, resolution)**: quiet payoff / breath / new normal
+
+- **Recipe 2: Motion segmentation (4 panels)**
+  - **P1 (half, beat)**: approach/windup (body shifts, weight transfer)
+  - **P2 (half, beat)**: contact (impact, grab, rip line)
+  - **P3 (half, beat)**: follow-through (object displacement, recoil)
+  - **P4 (half, beat)**: reaction (eyes/hand/stance change)
+
+- **Recipe 3: Vertical slice progression (3–5 panels)**
+  - Use tall panels for stairs/doorway/walking beats.
+  - Keep one repeating environment line (tile edge / railing / step rhythm) to show distance and direction.
 
 ---
 
