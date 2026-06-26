@@ -2,8 +2,13 @@ import { listLeads } from "@/app/outreach/actions"
 import { AddLeadForm } from "@/components/outreach/add-lead-form"
 import { LeadsPipeline } from "@/components/outreach/leads-pipeline"
 
-export default async function LeadsPage() {
-  const res = await listLeads()
+export default async function LeadsPage({
+  params,
+}: {
+  params: Promise<{ clientId: string }>
+}) {
+  const { clientId } = await params
+  const res = await listLeads(clientId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -14,7 +19,7 @@ export default async function LeadsPage() {
         </p>
       </div>
 
-      <AddLeadForm />
+      <AddLeadForm clientId={clientId} />
 
       {!res.ok ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

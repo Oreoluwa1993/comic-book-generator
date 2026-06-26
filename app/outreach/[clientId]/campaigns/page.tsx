@@ -5,8 +5,13 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-export default async function CampaignsPage() {
-  const res = await listCampaigns()
+export default async function CampaignsPage({
+  params,
+}: {
+  params: Promise<{ clientId: string }>
+}) {
+  const { clientId } = await params
+  const res = await listCampaigns(clientId)
   const campaigns = res.ok ? res.campaigns : []
 
   return (
@@ -18,7 +23,7 @@ export default async function CampaignsPage() {
         </p>
       </div>
 
-      <CreateCampaignForm />
+      <CreateCampaignForm clientId={clientId} />
 
       {!res.ok ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -51,15 +56,13 @@ export default async function CampaignsPage() {
                   {c.description ? (
                     <p className="mt-1 text-sm text-muted-foreground">{c.description}</p>
                   ) : null}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Subject: {c.subject}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Subject: {c.subject}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {c.sent_count} sent · Created {new Date(c.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <Link
-                  href={`/outreach/campaigns/${c.id}`}
+                  href={`/outreach/${clientId}/campaigns/${c.id}`}
                   className={cn(buttonVariants({ className: "h-9 w-fit shrink-0" }))}
                 >
                   Open

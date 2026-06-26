@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 type Props = {
+  clientId: string
   initialPosts: SocialPost[]
 }
 
-export const SocialGenerator = ({ initialPosts }: Props) => {
+export const SocialGenerator = ({ clientId, initialPosts }: Props) => {
   const [platform, setPlatform] = useState<SocialPlatform>("twitter")
   const [topic, setTopic] = useState("")
   const [angle, setAngle] = useState("")
@@ -56,7 +57,7 @@ export const SocialGenerator = ({ initialPosts }: Props) => {
     if (!generated) return
     setSaveError(null)
     startSave(async () => {
-      const res = await saveSocialPost({
+      const res = await saveSocialPost(clientId, {
         platform,
         content: generated.content,
         hashtags: generated.hashtags,

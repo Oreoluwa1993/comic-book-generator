@@ -1,8 +1,13 @@
 import { listSocialPosts } from "@/app/outreach/actions"
 import { SocialGenerator } from "@/components/outreach/social-generator"
 
-export default async function SocialPage() {
-  const res = await listSocialPosts()
+export default async function SocialPage({
+  params,
+}: {
+  params: Promise<{ clientId: string }>
+}) {
+  const { clientId } = await params
+  const res = await listSocialPosts(clientId)
   const posts = res.ok ? res.posts : []
 
   return (
@@ -20,7 +25,7 @@ export default async function SocialPage() {
         </div>
       ) : null}
 
-      <SocialGenerator initialPosts={posts} />
+      <SocialGenerator clientId={clientId} initialPosts={posts} />
     </div>
   )
 }

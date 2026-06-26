@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { CAMPAIGN_CHANNELS, type CampaignChannel } from "@/lib/outreach"
 import { cn } from "@/lib/utils"
 
-export const CreateCampaignForm = () => {
+export const CreateCampaignForm = ({ clientId }: { clientId: string }) => {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -24,13 +24,13 @@ export const CreateCampaignForm = () => {
     e.preventDefault()
     setError(null)
     startTransition(async () => {
-      const res = await createCampaign(form)
+      const res = await createCampaign(clientId, form)
       if (!res.ok) {
         setError(res.error)
         return
       }
       setOpen(false)
-      router.push(`/outreach/campaigns/${res.campaign.id}`)
+      router.push(`/outreach/${clientId}/campaigns/${res.campaign.id}`)
     })
   }
 

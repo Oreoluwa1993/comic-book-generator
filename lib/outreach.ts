@@ -1,3 +1,15 @@
+export type Client = {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  industry: string | null
+  website: string | null
+  icp_content: string | null
+  created_at: string
+  updated_at: string
+}
+
 export const LEAD_STAGES = ["prospect", "contacted", "interested", "qualified", "proposal", "won", "lost"] as const
 export type LeadStage = (typeof LEAD_STAGES)[number]
 

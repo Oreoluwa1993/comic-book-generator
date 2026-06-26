@@ -27,7 +27,11 @@ export async function POST(req: Request) {
     return generateSocialPost(body as SocialGenerateInput)
   }
 
-  return Response.json({ error: "Invalid generation type. Use 'email' or 'social'." }, { status: 400 })
+  if (type === "icp") {
+    return generateIcp(body as IcpGenerateInput)
+  }
+
+  return Response.json({ error: "Invalid generation type. Use 'email', 'social', or 'icp'." }, { status: 400 })
 }
 
 type EmailGenerateInput = {
@@ -144,4 +148,63 @@ Do not include hashtags inside the content string — put them in the hashtags a
   } catch {
     return Response.json({ error: "Failed to parse AI response." }, { status: 500 })
   }
+}
+
+type IcpGenerateInput = {
+  type: "icp"
+  clientName: string
+  industry?: string
+  description?: string
+  topic?: string
+}
+
+async function generateIcp(input: IcpGenerateInput) {
+  const { clientName, industry, description, topic } = input
+
+  const context = [
+    `Business name: ${clientName}`,
+    industry ? `Industry: ${industry}` : null,
+    description ? `What they do: ${description}` : null,
+    topic ? `Focus area: ${topic}` : null,
+  ].filter(Boolean).join("\n")
+
+  const message = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 1200,
+    messages: [
+      {
+        role: "user",
+        content: `Write a structured Ideal Customer Profile (ICP) in markdown for this business:
+
+${context}
+
+Format it with these sections:
+# Ideal Customer Profile — [Business name]
+
+## 1. Who they are
+(firmographics or demographics — industry, size, role, region)
+
+## 2. What triggers them
+(the event or pain that starts the buying process)
+
+## 3. How they talk
+(real language and phrases they use to describe their problem)
+
+## 4. Where to reach them
+(channels, communities, events)
+
+## 5. Who this is NOT
+(disqualifiers — looks like a fit but isn't)
+
+## 6. Open questions to verify
+(what we don't know yet and how to find out)
+
+Be concise and specific. Tag assumptions with (assumption). Return only the markdown, no extra text.`,
+      },
+    ],
+  })
+
+  const icp = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+  if (!icp) return Response.json({ error: "Failed to generate ICP." }, { status: 500 })
+  return Response.json({ icp })
 }

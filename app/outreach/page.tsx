@@ -1,81 +1,70 @@
-import { getOutreachStats } from "./actions"
-import { StatsCard } from "@/components/outreach/stats-card"
-import { STAGE_LABELS, LEAD_STAGES } from "@/lib/outreach"
+import { listClients } from "./actions"
+import { CreateClientForm } from "@/components/outreach/create-client-form"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-export default async function OutreachDashboardPage() {
-  const res = await getOutreachStats()
-
-  if (!res.ok) {
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-        {res.error}
-      </div>
-    )
-  }
-
-  const { stats } = res
+export default async function OutreachPage() {
+  const res = await listClients()
+  const clients = res.ok ? res.clients : []
 
   return (
-    <div className="flex flex-col gap-8">
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard label="Total Leads" value={stats.totalLeads} sub="across all pipeline stages" />
-        <StatsCard label="Campaigns" value={stats.totalCampaigns} sub="email & channel campaigns" />
-        <StatsCard label="Messages Sent" value={stats.messagesSent} sub="via all campaigns" />
-        <StatsCard label="Social Posts" value={stats.totalSocialPosts} sub="saved drafts & published" />
-      </section>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-semibold">Your clients</h2>
+        <p className="text-sm text-muted-foreground">
+          Each client has its own lead pipeline, campaigns, social posts, and ICP.
+        </p>
+      </div>
 
-      <section className="rounded-2xl border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold">Lead Pipeline</h2>
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
-          {LEAD_STAGES.map((stage) => (
-            <div key={stage} className="flex flex-col gap-1 rounded-xl border p-3">
-              <p className="text-xs font-medium text-muted-foreground">{STAGE_LABELS[stage]}</p>
-              <p className="text-2xl font-bold">{stats.leadsByStage[stage] ?? 0}</p>
-            </div>
-          ))}
+      <CreateClientForm />
+
+      {!res.ok ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {res.error}
         </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-3">
-        <QuickActionCard
-          href="/outreach/leads"
-          title="Manage Leads"
-          description="Add contacts, move them through your pipeline stages, and track who's interested."
-        />
-        <QuickActionCard
-          href="/outreach/campaigns"
-          title="Run Campaigns"
-          description="Create email sequences with AI-written copy and send them to your lead segments."
-        />
-        <QuickActionCard
-          href="/outreach/social"
-          title="Social Content"
-          description="Generate platform-specific posts for Twitter, LinkedIn, Instagram, and Facebook."
-        />
-      </section>
+      ) : clients.length === 0 ? (
+        <div className="rounded-2xl border border-dashed p-10 text-center">
+          <p className="text-sm font-medium">No clients yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create your first client above — add your own business or a client you manage outreach for.
+          </p>
+        </div>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {clients.map((c) => (
+            <li key={c.id} className="rounded-2xl border bg-card p-5 shadow-sm flex flex-col gap-3">
+              <div className="flex-1">
+                <p className="font-semibold">{c.name}</p>
+                {c.industry ? (
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">{c.industry}</p>
+                ) : null}
+                {c.description ? (
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{c.description}</p>
+                ) : null}
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  {c.icp_content ? (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      ICP ready
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-muted px-2 py-0.5">No ICP yet</span>
+                  )}
+                  {c.website ? (
+                    <span className="truncate">{c.website.replace(/^https?:\/\//, "")}</span>
+                  ) : null}
+                </div>
+              </div>
+              <Link
+                href={`/outreach/${c.id}`}
+                className={cn(buttonVariants({ className: "h-9 w-fit" }))}
+              >
+                Open
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
-
-const QuickActionCard = ({
-  href,
-  title,
-  description,
-}: {
-  href: string
-  title: string
-  description: string
-}) => (
-  <div className="flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm">
-    <div>
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-    </div>
-    <Link href={href} className={cn(buttonVariants({ className: "h-9 w-fit" }))}>
-      Open
-    </Link>
-  </div>
-)

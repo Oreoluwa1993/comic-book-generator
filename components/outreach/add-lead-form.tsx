@@ -7,10 +7,11 @@ import { LEAD_SOURCES, type LeadSource } from "@/lib/outreach"
 import { cn } from "@/lib/utils"
 
 type Props = {
+  clientId: string
   onCreated?: () => void
 }
 
-export const AddLeadForm = ({ onCreated }: Props) => {
+export const AddLeadForm = ({ clientId, onCreated }: Props) => {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +29,7 @@ export const AddLeadForm = ({ onCreated }: Props) => {
     e.preventDefault()
     setError(null)
     startTransition(async () => {
-      const res = await createLead(form)
+      const res = await createLead(clientId, form)
       if (!res.ok) {
         setError(res.error)
         return

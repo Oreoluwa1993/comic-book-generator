@@ -1,5 +1,4 @@
 import { AuthBar } from "@/components/site/auth-bar"
-import { OutreachNav } from "@/components/outreach/outreach-nav"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -16,7 +15,7 @@ export default function OutreachLayout({ children }: { children: React.ReactNode
                 Grow your audience
               </h1>
               <p className="mt-1 max-w-xl text-base text-muted-foreground">
-                Manage leads, run email campaigns, generate AI pitches, and create social content.
+                Manage clients, leads, campaigns, AI pitches, and social content — all in one place.
               </p>
             </div>
             <AuthBar className="sm:pt-1" />
@@ -27,8 +26,6 @@ export default function OutreachLayout({ children }: { children: React.ReactNode
             </Link>
           </div>
         </header>
-
-        <OutreachNav />
 
         {children}
       </main>

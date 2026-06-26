@@ -10,10 +10,10 @@ import { notFound } from "next/navigation"
 export default async function CampaignDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ clientId: string; id: string }>
 }) {
-  const { id } = await params
-  const [campaignRes, leadsRes] = await Promise.all([getCampaign(id), listLeads()])
+  const { clientId, id } = await params
+  const [campaignRes, leadsRes] = await Promise.all([getCampaign(id), listLeads(clientId)])
 
   if (!campaignRes.ok) {
     if (campaignRes.error.includes("not found") || campaignRes.error.includes("No rows")) {
@@ -55,7 +55,7 @@ export default async function CampaignDetailPage({
           </p>
         </div>
         <Link
-          href="/outreach/campaigns"
+          href={`/outreach/${clientId}/campaigns`}
           className={cn(buttonVariants({ variant: "outline", className: "h-9 shrink-0" }))}
         >
           Back to campaigns

@@ -1,7 +1,18 @@
 "use server"
 
 import { getSupabaseServerClient } from "@/lib/supabase/server"
-import type { Lead, LeadStage, LeadSource, Campaign, CampaignStatus, CampaignChannel, SocialPost, SocialPlatform, SocialPostStatus } from "@/lib/outreach"
+import type {
+  Client,
+  Lead,
+  LeadStage,
+  LeadSource,
+  Campaign,
+  CampaignStatus,
+  CampaignChannel,
+  SocialPost,
+  SocialPlatform,
+  SocialPostStatus,
+} from "@/lib/outreach"
 
 const getAuthedUserId = async () => {
   const supabase = await getSupabaseServerClient()
@@ -12,18 +23,118 @@ const getAuthedUserId = async () => {
   return { supabase, userId: data.user.id }
 }
 
-// ─── Leads ───────────────────────────────────────────────────────────────────
+// ─── Clients ─────────────────────────────────────────────────────────────────
 
-export type LeadResult<T = void> = { ok: true } & (T extends void ? object : { data: T }) | { ok: false; error: string }
+export type ListClientsResult = { ok: true; clients: Client[] } | { ok: false; error: string }
+
+export const listClients = async (): Promise<ListClientsResult> => {
+  try {
+    const { supabase } = await getAuthedUserId()
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("created_at", { ascending: true })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, clients: data as Client[] }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to load clients." }
+  }
+}
+
+export type GetClientResult = { ok: true; client: Client } | { ok: false; error: string }
+
+export const getClient = async (clientId: string): Promise<GetClientResult> => {
+  try {
+    const { supabase, userId } = await getAuthedUserId()
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", clientId)
+      .eq("user_id", userId)
+      .single()
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, client: data as Client }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to load client." }
+  }
+}
+
+export type CreateClientResult = { ok: true; client: Client } | { ok: false; error: string }
+
+export const createClient = async (input: {
+  name: string
+  description?: string
+  industry?: string
+  website?: string
+}): Promise<CreateClientResult> => {
+  try {
+    const { supabase, userId } = await getAuthedUserId()
+    const name = input.name.trim()
+    if (!name) return { ok: false, error: "Client name is required." }
+    const { data, error } = await supabase
+      .from("clients")
+      .insert({
+        user_id: userId,
+        name,
+        description: input.description?.trim() || null,
+        industry: input.industry?.trim() || null,
+        website: input.website?.trim() || null,
+      })
+      .select("*")
+      .single()
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, client: data as Client }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to create client." }
+  }
+}
+
+export type UpdateClientResult = { ok: true; client: Client } | { ok: false; error: string }
+
+export const updateClient = async (
+  clientId: string,
+  patch: Partial<Pick<Client, "name" | "description" | "industry" | "website" | "icp_content">>
+): Promise<UpdateClientResult> => {
+  try {
+    const { supabase, userId } = await getAuthedUserId()
+    const { data, error } = await supabase
+      .from("clients")
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("id", clientId)
+      .eq("user_id", userId)
+      .select("*")
+      .single()
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, client: data as Client }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to update client." }
+  }
+}
+
+export type DeleteClientResult = { ok: true } | { ok: false; error: string }
+
+export const deleteClient = async (clientId: string): Promise<DeleteClientResult> => {
+  try {
+    const { supabase, userId } = await getAuthedUserId()
+    const { error } = await supabase.from("clients").delete().eq("id", clientId).eq("user_id", userId)
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to delete client." }
+  }
+}
+
+// ─── Leads ───────────────────────────────────────────────────────────────────
 
 export type ListLeadsResult = { ok: true; leads: Lead[] } | { ok: false; error: string }
 
-export const listLeads = async (): Promise<ListLeadsResult> => {
+export const listLeads = async (clientId: string): Promise<ListLeadsResult> => {
   try {
     const { supabase } = await getAuthedUserId()
     const { data, error } = await supabase
       .from("leads")
       .select("*")
+      .eq("client_id", clientId)
       .order("created_at", { ascending: false })
     if (error) return { ok: false, error: error.message }
     return { ok: true, leads: data as Lead[] }
@@ -34,14 +145,17 @@ export const listLeads = async (): Promise<ListLeadsResult> => {
 
 export type CreateLeadResult = { ok: true; lead: Lead } | { ok: false; error: string }
 
-export const createLead = async (input: {
-  name: string
-  email: string
-  company?: string
-  role?: string
-  source?: LeadSource
-  notes?: string
-}): Promise<CreateLeadResult> => {
+export const createLead = async (
+  clientId: string,
+  input: {
+    name: string
+    email: string
+    company?: string
+    role?: string
+    source?: LeadSource
+    notes?: string
+  }
+): Promise<CreateLeadResult> => {
   try {
     const { supabase, userId } = await getAuthedUserId()
     const name = input.name.trim()
@@ -53,6 +167,7 @@ export const createLead = async (input: {
       .from("leads")
       .insert({
         user_id: userId,
+        client_id: clientId,
         name,
         email,
         company: input.company?.trim() || null,
@@ -126,12 +241,13 @@ export const deleteLead = async (leadId: string): Promise<DeleteLeadResult> => {
 
 export type ListCampaignsResult = { ok: true; campaigns: Campaign[] } | { ok: false; error: string }
 
-export const listCampaigns = async (): Promise<ListCampaignsResult> => {
+export const listCampaigns = async (clientId: string): Promise<ListCampaignsResult> => {
   try {
     const { supabase } = await getAuthedUserId()
     const { data, error } = await supabase
       .from("campaigns")
       .select("*")
+      .eq("client_id", clientId)
       .order("created_at", { ascending: false })
     if (error) return { ok: false, error: error.message }
     return { ok: true, campaigns: data as Campaign[] }
@@ -177,13 +293,16 @@ export const getCampaign = async (campaignId: string): Promise<GetCampaignResult
 
 export type CreateCampaignResult = { ok: true; campaign: Campaign } | { ok: false; error: string }
 
-export const createCampaign = async (input: {
-  name: string
-  description?: string
-  subject: string
-  body: string
-  channel?: CampaignChannel
-}): Promise<CreateCampaignResult> => {
+export const createCampaign = async (
+  clientId: string,
+  input: {
+    name: string
+    description?: string
+    subject: string
+    body: string
+    channel?: CampaignChannel
+  }
+): Promise<CreateCampaignResult> => {
   try {
     const { supabase, userId } = await getAuthedUserId()
     const name = input.name.trim()
@@ -197,6 +316,7 @@ export const createCampaign = async (input: {
       .from("campaigns")
       .insert({
         user_id: userId,
+        client_id: clientId,
         name,
         description: input.description?.trim() || null,
         subject,
@@ -322,11 +442,14 @@ export const sendCampaign = async (campaignId: string): Promise<SendCampaignResu
     const now = new Date().toISOString()
     const messages = (leadsData ?? []).map((lead: Lead) => ({
       user_id: userId,
+      client_id: campaign.client_id,
       lead_id: lead.id,
       campaign_id: campaignId,
       channel: campaign.channel,
       subject: campaign.subject,
-      body: campaign.body.replace(/\{\{name\}\}/g, lead.name).replace(/\{\{company\}\}/g, lead.company ?? ""),
+      body: campaign.body
+        .replace(/\{\{name\}\}/g, lead.name)
+        .replace(/\{\{company\}\}/g, lead.company ?? ""),
       status: "sent",
       sent_at: now,
     }))
@@ -355,10 +478,17 @@ export const sendCampaign = async (campaignId: string): Promise<SendCampaignResu
 
 export type ListSocialPostsResult = { ok: true; posts: SocialPost[] } | { ok: false; error: string }
 
-export const listSocialPosts = async (platform?: SocialPlatform): Promise<ListSocialPostsResult> => {
+export const listSocialPosts = async (
+  clientId: string,
+  platform?: SocialPlatform
+): Promise<ListSocialPostsResult> => {
   try {
     const { supabase } = await getAuthedUserId()
-    let q = supabase.from("social_posts").select("*").order("created_at", { ascending: false })
+    let q = supabase
+      .from("social_posts")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
     if (platform) q = q.eq("platform", platform)
     const { data, error } = await q
     if (error) return { ok: false, error: error.message }
@@ -370,13 +500,16 @@ export const listSocialPosts = async (platform?: SocialPlatform): Promise<ListSo
 
 export type SaveSocialPostResult = { ok: true; post: SocialPost } | { ok: false; error: string }
 
-export const saveSocialPost = async (input: {
-  platform: SocialPlatform
-  content: string
-  hashtags?: string[]
-  status?: SocialPostStatus
-  scheduled_at?: string
-}): Promise<SaveSocialPostResult> => {
+export const saveSocialPost = async (
+  clientId: string,
+  input: {
+    platform: SocialPlatform
+    content: string
+    hashtags?: string[]
+    status?: SocialPostStatus
+    scheduled_at?: string
+  }
+): Promise<SaveSocialPostResult> => {
   try {
     const { supabase, userId } = await getAuthedUserId()
     const content = input.content.trim()
@@ -386,6 +519,7 @@ export const saveSocialPost = async (input: {
       .from("social_posts")
       .insert({
         user_id: userId,
+        client_id: clientId,
         platform: input.platform,
         content,
         hashtags: input.hashtags ?? [],
@@ -449,15 +583,19 @@ export type OutreachStats = {
 
 export type GetStatsResult = { ok: true; stats: OutreachStats } | { ok: false; error: string }
 
-export const getOutreachStats = async (): Promise<GetStatsResult> => {
+export const getOutreachStats = async (clientId: string): Promise<GetStatsResult> => {
   try {
     const { supabase } = await getAuthedUserId()
 
     const [leadsRes, campaignsRes, messagesRes, socialRes] = await Promise.all([
-      supabase.from("leads").select("stage"),
-      supabase.from("campaigns").select("id", { count: "exact", head: true }),
-      supabase.from("outreach_messages").select("id", { count: "exact", head: true }).eq("status", "sent"),
-      supabase.from("social_posts").select("id", { count: "exact", head: true }),
+      supabase.from("leads").select("stage").eq("client_id", clientId),
+      supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("client_id", clientId),
+      supabase
+        .from("outreach_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", clientId)
+        .eq("status", "sent"),
+      supabase.from("social_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId),
     ])
 
     const leads = (leadsRes.data ?? []) as { stage: string }[]
