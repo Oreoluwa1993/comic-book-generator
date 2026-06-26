@@ -44,6 +44,13 @@ export default function Home() {
             >
               Projects
             </Link>
+            <Link
+              href="/outreach"
+              className={cn(buttonVariants({ variant: "outline", className: "h-10 w-fit" }))}
+              aria-label="Open outreach engine"
+            >
+              Outreach
+            </Link>
             <p className="text-xs text-muted-foreground">
               Tip: paste a full story — the app will keep your plot and just split it into panels.
             </p>
