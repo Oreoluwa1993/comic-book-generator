@@ -17,9 +17,10 @@ The skill never writes a single word of copy without first reading `icp.md` and
 
 ## Args
 
-Invoked as `/copy-improver [clientId] [--type email|social|all] [--campaign <id>]`
+Invoked as `/copy-improver [clientSlug|clientId] [--type email|social|all] [--campaign <id>]`
 
-- `clientId` — UUID of the client whose copy to improve. If omitted, ask the user.
+- `clientSlug` — folder name under `clients/` (e.g. `cintelytics-terminal`). Preferred.
+- `clientId` — Supabase UUID. If provided instead of slug, look up the slug in `clients/_index.md`.
 - `--type` — `email` (campaigns), `social` (posts), or `all`. Default: `email`.
 - `--campaign <id>` — Target a specific campaign. Otherwise targets the 3 most recent active/draft campaigns.
 
@@ -27,13 +28,26 @@ Invoked as `/copy-improver [clientId] [--type email|social|all] [--campaign <id>
 
 ## PRE-FLIGHT — MANDATORY (complete before any other step)
 
-**Do not proceed to Step 1 until all three files are loaded.
+**Do not proceed to Step 1 until all files are loaded.
 Do not write, edit, suggest, or improve any copy until the pre-flight is complete.**
+
+### PF-0 — Resolve client slug and folder
+
+```
+Read: clients/_index.md
+```
+
+From the arg provided:
+- If a slug (e.g. `cintelytics-terminal`) was passed: confirm it exists in `_index.md`. Set `{clientFolder} = clients/{slug}`.
+- If a UUID was passed: find the matching row in `_index.md` and extract the slug. Set `{clientFolder} = clients/{slug}`.
+- If neither matches: STOP — `⛔ Client not found in clients/_index.md. Add the client first.`
+
+All subsequent file reads in this skill use `{clientFolder}/`.
 
 ### PF-1 — Read icp.md
 
 ```
-Read: icp.md
+Read: {clientFolder}/icp.md
 ```
 
 Extract and hold in working memory:
@@ -44,14 +58,14 @@ Extract and hold in working memory:
 - **Disqualifiers** (individual politicians, one-event institutions, generic PR)
 - **Optimal outreach window** (event-proximity timing rule)
 
-If `icp.md` is missing: STOP. Tell the user:
-> ⛔ icp.md not found. Run `/icp` first to generate the ICP for this client,
-> or create icp.md manually. The copy-improver cannot run without it.
+If `{clientFolder}/icp.md` is missing: STOP. Tell the user:
+> ⛔ icp.md not found at {clientFolder}/icp.md. Run `/icp {clientSlug}` first,
+> or create the file manually. The copy-improver cannot run without it.
 
 ### PF-2 — Read jtbd.md
 
 ```
-Read: jtbd.md
+Read: {clientFolder}/jtbd.md
 ```
 
 Extract and hold in working memory:
@@ -64,22 +78,38 @@ Extract and hold in working memory:
 - **Channel rules** (which channels to use per segment)
 - **Disqualifier table** (reinforces icp.md disqualifiers)
 
-If `jtbd.md` is missing: STOP. Tell the user:
-> ⛔ jtbd.md not found. Creating it now from icp.md...
-> Then create jtbd.md by following the JTBD document structure in icp.md
+If `{clientFolder}/jtbd.md` is missing: STOP. Tell the user:
+> ⛔ jtbd.md not found at {clientFolder}/jtbd.md. Creating it now from icp.md...
+> Then create {clientFolder}/jtbd.md by following the JTBD document structure in icp.md
 > Section 3 ("What they're trying to do") and sections 4–6. After creating it,
 > continue with PF-2.
 
 ### PF-3 — Load accumulated learnings
 
 ```
-Read: .claude/copy-learnings.md
+Read: {clientFolder}/copy-learnings.md
 ```
 
 - If it exists: load all standing rules. These are hard constraints — every
   variant must comply. If a standing rule contradicts something in icp.md or
   jtbd.md, flag the conflict to the user before proceeding.
 - If it doesn't exist: note "Run #1 — no prior learnings."
+
+### PF-3b — Load competitor intelligence
+
+```
+Read: {clientFolder}/competitor-learnings.md
+```
+
+- If it exists: extract standing rules and JTBD gaps from competitor research.
+  These feed directly into copy strategy:
+  - **Saturated angles** (what every competitor says) → differentiate, don't replicate
+  - **JTBD gaps** (outcomes no competitor addresses) → lead with these in copy
+  - **Language competitors avoid** from the ICP "Use" list → use it, stand out
+  - **Strongest competitor hooks** → counter-position, don't mirror
+- If it doesn't exist: note "No competitor intelligence yet — run
+  `/competitor-analysis {clientSlug}` to generate it. Copy will improve
+  significantly once competitor gaps are known."
 
 ### PF-4 — Confirm scope
 
@@ -263,10 +293,11 @@ Rebuild from the job statement up:
 - **Sentence 1:** Describes their current reality — the obstacle (the consequence
   of their current tools failing at the job). No brand mention.
 - **Sentence 2–3:** Names the trigger (the event making this urgent now).
-- **Sentence 4+:** Introduces Terminal/the product as the mechanism that
+- **Sentence 4+:** Introduces the client's product as the mechanism that
   enables the job — briefly, without feature-listing.
-- **Proof point:** One specific, concrete example of the outcome (a narrative caught
-  early, a frame shift surfaced before it hit mainstream). Not a general claim.
+- **Proof point:** One specific, concrete example of the outcome (from the client's
+  brand-voice.md "Proof points available in demo" list, or the most relevant outcome
+  from jtbd.md). Not a general claim.
 - **CTA:** Offer the demo or the specific proof — not "let me know if interested."
   Match the channel rule from ICP §5.
 
@@ -354,7 +385,7 @@ Confirm what was saved.
 
 ## Step 8 — Update the learnings file
 
-Append to `.claude/copy-learnings.md`. Never delete or overwrite existing content.
+Append to `{clientFolder}/copy-learnings.md`. Never delete or overwrite existing content.
 
 ```markdown
 ## Run: <ISO date> — Client: <client name>
@@ -393,7 +424,7 @@ If new data contradicts a standing rule, flag it explicitly and update.
 ```
 ✅ Copy improved for <client name>
 
-Pre-flight:  icp.md ✅  jtbd.md ✅  copy-learnings.md ✅
+Pre-flight:  {clientFolder}/icp.md ✅  {clientFolder}/jtbd.md ✅  {clientFolder}/copy-learnings.md ✅
 
 JTBD Signal Report:
 • <top 3 findings from Step 4>
@@ -402,7 +433,7 @@ Variants produced:
 • Campaign "<name>": Variant <X> applied
   JTBD checks passed: J1–J7 ✅
 
-Learnings file updated: .claude/copy-learnings.md
+Learnings file updated: {clientFolder}/copy-learnings.md
 Run count: <N>
 
 Next run: after your next campaign sends — each round of reply data
@@ -414,10 +445,11 @@ sharpens the standing rules.
 ## Failure modes
 
 - **icp.md missing:** STOP. Do not generate any copy. Tell the user to run
-  `/icp` first or create the file manually. This is a hard block.
+  `/icp {clientSlug}` first or create `{clientFolder}/icp.md` manually. Hard block.
 
 - **jtbd.md missing:** Create it from icp.md (Section 3 "What they're trying to do"
-  + Sections 4–6) using the JTBD document structure, then continue.
+  + Sections 4–6) using the JTBD document structure, save to `{clientFolder}/jtbd.md`,
+  then continue.
 
 - **No campaigns yet:** Skip DB analysis. Run the J1–J7 checklist on any copy
   the user pastes in. Improve using icp.md + jtbd.md alone.
