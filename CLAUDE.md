@@ -1,5 +1,9 @@
 @AGENTS.md
 
+# Writing Style Rules
+
+- **No em dashes** ( — ) in any written output. Use a comma, period, colon, or restructure the sentence instead.
+
 # Automation Ideas — Ongoing Rule
 
 After completing any repetitive or manual task, append a short note to
